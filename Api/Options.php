@@ -1,9 +1,9 @@
 <?php
 namespace Dfe\Robokassa\Api;
-use Df\Xml\X;
 use Magento\Framework\App\ScopeInterface as IScope;
 use Magento\Store\Api\Data\StoreInterface as IStore;
 use Magento\Store\Model\Store;
+use SimpleXMLElement as X;
 # 2017-04-12
 final class Options {
 	/**
@@ -72,7 +72,7 @@ final class Options {
 	private static function p($s = null, bool $canUseDemo = false):array {return dfcf(function($merchantId, $locale) {
 		$url = 'https://auth.robokassa.ru/Merchant/WebService/Service.asmx/GetCurrencies'; /** @var string $url */
 		$r = []; /** @var array(string => array(string => string)) $r */
-		foreach (df_xml_parse(df_cache_get_simple('', 'df_http_get', [], $url, [
+		foreach (df_xml_x(df_cache_get_simple('', 'df_http_get', [], $url, [
 			# 2017-04-15
 			# Using the «demo» account allows to receive the list of all Robokassa payment options.
 			# I use it only for testing and demonstration.
@@ -80,21 +80,21 @@ final class Options {
 		]))->{'Groups'}->{'Group'} as $xGroup) { /** @var X $xGroup */
 			$xA = $xGroup->attributes(); /** @var X[] $xA */
 			$items = []; /** @var array(array(string => string)) $items */
-			$gCode = df_leaf_s($xA['Code']); /** @var string $gCode */
+			$gCode = strval($xA['Code']); /** @var string $gCode */
 			foreach ($xGroup->{'Items'}->{'Currency'} as $xI) {/** @var X $xI */
 				$xIA = $xI->attributes(); /** @var X[] $xIA */
-				if (!self::excluded($gCode, $alias = df_leaf_s($xIA['Alias']))) {/** @var string $alias */
+				if (!self::excluded($gCode, $alias = strval($xIA['Alias']))) {/** @var string $alias */
 					$items[]= [
 						self::$ID_UNIVERSAL => $alias
-						,self::$ID_SPECIFIC => df_leaf_s($xIA['Label'])
-						,self::$MAX => df_leaf_s($xIA['MaxValue'])
-						,self::$MIN => df_leaf_s($xIA['MinValue'])
-						,self::$LABEL => df_leaf_s($xIA['Name'])
+						,self::$ID_SPECIFIC => strval($xIA['Label'])
+						,self::$MAX => strval($xIA['MaxValue'])
+						,self::$MIN => strval($xIA['MinValue'])
+						,self::$LABEL => strval($xIA['Name'])
 					];
 				}
 			}
 			if ($items) {
-				$r[$gCode] = [self::$G_TITLE => df_leaf_s($xA['Description']), self::$ITEMS => $items];
+				$r[$gCode] = [self::$G_TITLE => strval($xA['Description']), self::$ITEMS => $items];
 			}
 		}
 		# 2017-04-18
